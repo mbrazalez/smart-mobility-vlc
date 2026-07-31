@@ -1,0 +1,12 @@
+FROM python:3.14-slim
+
+WORKDIR /app
+
+COPY docker-config/producers/datasets .
+COPY docker-config/producers/kafka-producer.py .
+COPY docker-config/producers/out_of_services_producer.py .
+COPY docker-config/producers/requirements.txt .
+
+RUN pip install --no-cache-dir -r requirements.txt
+
+CMD ["python", "kafka-producer.py"]

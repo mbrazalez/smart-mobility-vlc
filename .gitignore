@@ -1,0 +1,12 @@
+/.env
+/.venv
+/cache
+/config
+/interesting
+/logs
+/plugins
+/requirements.txt
+/dags/__pycache__
+/deployment/docker/producer-files/datasets/
+/notebooks
+/notebooks/datasets/
