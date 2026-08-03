@@ -103,7 +103,17 @@ silver_df = (
 ).filter(
     F.col("tramo_id").isNotNull() &
     F.col("nombre_tramo").isNotNull() &
-    F.col("estado").isin(0,9)
+    (F.col("estado") != 3) & # Cortado
+    (F.col("estado") != 8) & # Subterraneo cortado
+    (F.col("estado") != 9) &
+    F.col("estado").isin([0,9])
+)
+
+silver_df = silver_df.withColumn("estado",
+    F.when(F.col("estado").isin([0,4]), 0) # Considerar sin datos como Fluido
+    .when(F.col("estado") == 5, 0) # Fluido subterraneo -> Fluido
+    .when(F.col("estado") == 6, 1) # Denso subterraneo -> Denso
+    .when(F.col("estado") == 7, 2) # Congestionado subterraneo -> Congestionado
 )
 
 silver_df.writeStream \

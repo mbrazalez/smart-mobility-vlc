@@ -28,7 +28,7 @@ ENV PATH="/usr/bin:${PATH}"
 
 # Actualiza pip (recomendado) e instala delta-spark 4.0.0
 RUN python3 -m pip install --upgrade pip  
-RUN pip install --no-cache-dir delta-spark==4.0.0 scikit-fuzzy scipy
+RUN pip install --no-cache-dir delta-spark==4.0.0 scikit-fuzzy scipy networkx
 
 
 COPY /docker-config/spark-defaults.conf /opt/spark/conf/spark-defaults.conf

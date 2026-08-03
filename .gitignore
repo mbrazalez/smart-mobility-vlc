@@ -8,5 +8,5 @@
 /requirements.txt
 /dags/__pycache__
 /deployment/docker/producer-files/datasets/
-/notebooks
 /notebooks/datasets/
+/notebooks/requests-and-examples-for-testing/

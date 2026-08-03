@@ -103,7 +103,7 @@ def start_up_sqlserver():
                 so2 FLOAT,
                 no2 FLOAT,
                 o3 FLOAT,
-                air_quality NVARCHAR(50),
+                wind_kph FLOAT,
                 observed_at DATETIME2,
             );
         END

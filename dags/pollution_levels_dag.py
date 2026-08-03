@@ -75,76 +75,6 @@ Pipeline for pollution_levels_app finished successfully.
 """,
     )
 
-def pollutant_level(value, limits):
-    """
-    Devuelve un nivel entre 0 y 5 según los umbrales.
-    0 = Buena
-    1 = Razonablemente Buena
-    2 = Regular
-    3 = Desfavorable
-    4 = Muy Desfavorable
-    5 = Extremadamente Desfavorable
-    """
-
-    if value is None:
-        return None
-
-    if value <= limits[0]:
-        return 0
-    elif value <= limits[1]:
-        return 1
-    elif value <= limits[2]:
-        return 2
-    elif value <= limits[3]:
-        return 3
-    elif value <= limits[4]:
-        return 4
-    else:
-        return 5
-
-
-def calculate_air_quality(pm25, pm10, so2, no2, o3):
-
-    levels = []
-
-    # PM2.5
-    level = pollutant_level(pm25, [10, 20, 25, 50, 75])
-    if level is not None:
-        levels.append(level)
-
-    # PM10
-    level = pollutant_level(pm10, [20, 40, 50, 100, 150])
-    if level is not None:
-        levels.append(level)
-
-    # SO2
-    level = pollutant_level(so2, [100, 200, 350, 500, 750])
-    if level is not None:
-        levels.append(level)
-
-    # NO2
-    level = pollutant_level(no2, [40, 90, 120, 230, 340])
-    if level is not None:
-        levels.append(level)
-
-    # O3
-    level = pollutant_level(o3, [50, 100, 130, 240, 380])
-    if level is not None:
-        levels.append(level)
-
-    if not levels:
-        return None
-
-    labels = [
-        "Buena",
-        "Razonablemente Buena",
-        "Regular",
-        "Desfavorable",
-        "Muy Desfavorable",
-        "Extremadamente Desfavorable"
-    ]
-
-    return labels[max(levels)]
 
 #####################################################
 # API requests
@@ -195,13 +125,7 @@ def fetch_and_store_weather(**context):
     so2 = data["current"]["air_quality"]["so2"]
     no2 = data["current"]["air_quality"]["no2"]
     o3 = data["current"]["air_quality"]["o3"]
-    air_quality = calculate_air_quality(
-        pm25=data["current"]["air_quality"]["pm2_5"],
-        pm10=data["current"]["air_quality"]["pm10"],
-        so2=data["current"]["air_quality"]["so2"],
-        no2=data["current"]["air_quality"]["no2"],
-        o3=data["current"]["air_quality"]["o3"],
-    )
+    wind_kph = data["current"]["wind_kph"]
     observed_at = data["current"]["last_updated"]
 
     conn = pyodbc.connect(SQLSERVER_CONN_STR, autocommit=True)
@@ -216,7 +140,7 @@ def fetch_and_store_weather(**context):
             so2,
             no2,
             o3,
-            air_quality,
+            wind_kph,
             observed_at
         )
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
@@ -228,7 +152,7 @@ def fetch_and_store_weather(**context):
             so2,
             no2,
             o3,
-            air_quality,
+            wind_kph,
             observed_at
         )
     )

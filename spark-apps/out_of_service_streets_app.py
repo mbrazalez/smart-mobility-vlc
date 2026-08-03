@@ -23,7 +23,8 @@ spark.sparkContext.setLogLevel("ERROR")
 
 
 UPLOADING_PATH = "s3a://smart-mobility-vlc/delta/out-of-services/landing-zone/"
-CURATED_PATH = "s3a://smart-mobility-vlc/delta/out-of-services/curated-zone/"
+SILVER_PATH = "s3a://smart-mobility-vlc/delta/out-of-services/2-silver/"
+GOLD_PATH = "s3a://smart-mobility-vlc/delta/out-of-services/3-gold/"
 CHECKPOINT_PATH = "s3a://smart-mobility-vlc/delta/out-of-services/_checkpoints/"
 
 #####################################################
@@ -68,37 +69,31 @@ new_files = [
     if file not in processed_files
 ]
 
-
 if not new_files:
     print("No hay archivos nuevos para procesar.")
     spark.stop()
     sys.exit(0)
 
-
 #####################################################
-# Curated Zone
+# Ingesta en silver
 #####################################################
-schema_curated = StructType([
-    StructField("tramo_id", IntegerType(), True),
+schema_bronze = StructType([
+    StructField("tramo_osm_id", IntegerType(), True),
     StructField("nombre_tramo", StringType(), True),
     StructField("estado", StringType(), True),
-    StructField("tipoincidencia", StringType(), True),
-    StructField("barrio_id", IntegerType(), True),
-    StructField("distrito_id", IntegerType(), True),
-    StructField("geometry_tramo", StringType(), True),
+    StructField("tipoincidencia", StringType(), True)
 ])
 
-
-curated_df = (
+bronze_df = (
     spark.read
     .option("header", True)
     .option("delimiter", ";")
-    .schema(schema_curated)
+    .schema(schema_bronze)
     .csv(new_files)
 )
 
-curated_df = (
-    curated_df
+silver_df = (
+    bronze_df
     .withColumns({
         "nombre_tramo": F.from_json(
             F.regexp_replace(
@@ -116,20 +111,98 @@ curated_df = (
         "source_file": F.input_file_name()
     })
     .filter(
-        F.col("tramo_id").isNotNull() &
+        F.col("tramo_osm_id").isNotNull() &
         F.col("estado").isin("Abierta", "Cerrada")
     )
 )
 
 
-delta_curated = DeltaTable.forPath(spark,CURATED_PATH)
+delta_curated = DeltaTable.forPath(spark,SILVER_PATH)
 
 (
     delta_curated.alias("t")
     .merge(
-        curated_df.alias("s"),
+        silver_df.alias("s"),
         """
-            t.tramo_id = s.tramo_id AND
+            t.tramo_osm_id = s.tramo_osm_id
+        """
+    )
+    .whenMatchedUpdate(
+        condition="t.ingestion_ts < s.ingestion_ts",
+        set={
+            "nombre_tramo": "s.nombre_tramo",
+            "estado": "s.estado",
+            "tipoincidencia": "s.tipoincidencia",
+            "ingestion_ts": "s.ingestion_ts",
+            "source_file": "s.source_file"
+        }
+    )
+    .whenNotMatchedInsert(
+        values={
+            "tramo_osm_id": "s.tramo_osm_id",
+            "nombre_tramo": "s.nombre_tramo",
+            "estado": "s.estado",
+            "tipoincidencia": "s.tipoincidencia",
+            "ingestion_ts": "s.ingestion_ts",
+            "source_file": "s.source_file"
+        }
+    )
+    .execute()
+)
+
+#####################################################
+# Ingesta en Gold
+#####################################################
+schema_silver = StructType([
+    StructField("tramo_osm_id", IntegerType(), False),
+    StructField("nombre_tramo", ArrayType(StringType(), True)),
+    StructField("estado", StringType(), True),
+    StructField("tipoincidencia", StringType(), True),
+    StructField("ingestion_ts", TimestampType(), True),
+    StructField("source_file", StringType(), True)
+])
+
+silver_df = (
+    spark.read
+        .schema(schema_silver)
+        .format("delta")
+        .load(SILVER_PATH)
+)
+
+mapping_schema = StructType([
+    StructField("tramo_osm_id", IntegerType(), True),
+    StructField("nombre_tramo", StringType(), True),
+    StructField("geometry_tramo", StringType(), True),
+    StructField("barrio_id", IntegerType(), True),
+    StructField("nombre_barrio", StringType(), True),
+    StructField("distrito_id", IntegerType(), True),
+    StructField("nombre_distrito", StringType(), True),
+])
+
+mappings_df = (
+    spark.read
+        .schema(mapping_schema)
+        .option("header", True)
+        .option("delimiter", ";")
+        .csv("s3a://smart-mobility-vlc/delta/resources/callejero-con-mappings.csv")
+)
+
+gold_df = (
+    silver_df.join(
+        mappings_df,
+        how="inner",
+        on="tramo_osm_id"
+    )
+)
+
+delta_curated = DeltaTable.forPath(spark,GOLD_PATH)
+
+(
+    delta_curated.alias("t")
+    .merge(
+        gold_df.alias("s"),
+        """
+            t.tramo_osm_id = s.tramo_osm_id AND
             t.barrio_id = s.barrio_id AND
             t.distrito_id = s.distrito_id AND
         """

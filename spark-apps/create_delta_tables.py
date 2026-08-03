@@ -68,7 +68,7 @@ schema_gold = StructType([
 create_delta_table(spark, GOLD_PATH, schema_gold)
 
 ######################################################
-# Generar delta table para CURATED DATA              #
+# Generar delta table para Silver
 ######################################################
 CURATED_PATH = "s3a://smart-mobility-vlc/delta/pollution-levels/curated-zone/"
 
@@ -80,9 +80,11 @@ schema_curated = StructType([
     StructField("so2", DoubleType(), True),
     StructField("no2", DoubleType(), True),
     StructField("o3", DoubleType(), True),
-    StructField("calidad_am", StringType(), True),
+    StructField("wind_kph", DoubleType(), True),
+    StructField("environmental_risk", DoubleType(), True),
     StructField("geometry_station", StringType(), True),
-    StructField("event_ts", TimestampType(), True)
+    StructField("event_ts", TimestampType(), True),
+    StructField("fis_version", StringType(), True)
 ])
 
 create_delta_table(spark, CURATED_PATH, schema_curated)
@@ -105,11 +107,10 @@ create_delta_table(spark, CHECKPOINT_PATH, schema_checkpoint)
 SILVER_PATH = "s3a://smart-mobility-vlc/delta/out-of-services/2-silver/"
 
 schema_silver = StructType([
-    StructField("tramo_id", IntegerType(), False),
+    StructField("tramo_osm_id", IntegerType(), False),
     StructField("nombre_tramo", ArrayType(StringType(), True)),
     StructField("estado", StringType(), True),
     StructField("tipoincidencia", StringType(), True),
-    StructField("geometry_tramo", StringType(), True),
     StructField("ingestion_ts", TimestampType(), True),
     StructField("source_file", StringType(), True)
 ])
@@ -122,7 +123,7 @@ create_delta_table(spark, SILVER_PATH, schema_silver)
 GOLD_PATH = "s3a://smart-mobility-vlc/delta/out-of-services/3-gold/"
 
 schema_gold = StructType([
-    StructField("tramo_id", IntegerType(), False),
+    StructField("tramo_osm_id", IntegerType(), False),
     StructField("nombre_tramo", ArrayType(StringType(), True)),
     StructField("estado", StringType(), True),
     StructField("tipoincidencia", StringType(), True),

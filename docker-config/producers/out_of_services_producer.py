@@ -24,7 +24,7 @@ INCIDENCIAS = [
 s3 = boto3.client("s3")
 
 streets_df = pd.read_csv(
-    "datasets/callejero-cleaned.csv",
+    "callejero-cleaned.csv",
     sep=";"
 )
 streets_df["estado"] = "Abierta"
@@ -57,7 +57,6 @@ while True:
             "nombre_tramo",
             "estado",
             "tipoincidencia",
-            "geometry"
         ]
     ]
 

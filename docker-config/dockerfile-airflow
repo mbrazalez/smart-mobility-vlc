@@ -77,4 +77,5 @@ RUN pip install --no-cache-dir \
     pyproj \
     apache-airflow-providers-microsoft-mssql \
     scikit-fuzzy \
-    scipy
+    scipy \
+    networkx
