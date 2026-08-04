@@ -104,16 +104,15 @@ silver_df = (
     F.col("tramo_id").isNotNull() &
     F.col("nombre_tramo").isNotNull() &
     (F.col("estado") != 3) & # Cortado
-    (F.col("estado") != 8) & # Subterraneo cortado
-    (F.col("estado") != 9) &
-    F.col("estado").isin([0,9])
+    (F.col("estado") != 8) # Subterraneo cortado
 )
 
 silver_df = silver_df.withColumn("estado",
-    F.when(F.col("estado").isin([0,4]), 0) # Considerar sin datos como Fluido
+    F.when(F.col("estado").isin([0,4,9]), 0) # Considerar sin datos como Fluido
     .when(F.col("estado") == 5, 0) # Fluido subterraneo -> Fluido
     .when(F.col("estado") == 6, 1) # Denso subterraneo -> Denso
     .when(F.col("estado") == 7, 2) # Congestionado subterraneo -> Congestionado
+    .otherwise(0)
 )
 
 silver_df.writeStream \
@@ -144,7 +143,6 @@ mappings_df = (
         .option("delimiter", ";")
         .csv("s3a://smart-mobility-vlc/delta/resources/tramos-con-mappings.csv")
 ).select("geometry_tramo", "barrio_id", "distrito_id", "station_id", "tramo_id")
-
 
 gold_df = (
     silver_df.join(

@@ -4,6 +4,7 @@ from pyspark.sql.types import *
 from delta.tables import DeltaTable
 import sys
 from datetime import datetime
+from pyspark.sql.window import Window
 
 def log(msg):
     print(f"[{datetime.now().strftime('%H:%M:%S')}] {msg}", flush=True)
@@ -22,7 +23,7 @@ spark = (
 spark.sparkContext.setLogLevel("ERROR")
 
 
-UPLOADING_PATH = "s3a://smart-mobility-vlc/delta/out-of-services/landing-zone/"
+UPLOADING_PATH = "s3a://smart-mobility-vlc/delta/out-of-services/1-bronze/"
 SILVER_PATH = "s3a://smart-mobility-vlc/delta/out-of-services/2-silver/"
 GOLD_PATH = "s3a://smart-mobility-vlc/delta/out-of-services/3-gold/"
 CHECKPOINT_PATH = "s3a://smart-mobility-vlc/delta/out-of-services/_checkpoints/"
@@ -107,7 +108,6 @@ silver_df = (
             F.col("tipoincidencia"),
             F.lit("No Especificado")
         ),
-        "ingestion_ts": F.current_timestamp(),
         "source_file": F.input_file_name()
     })
     .filter(
@@ -116,6 +116,21 @@ silver_df = (
     )
 )
 
+silver_df = silver_df.withColumn("ingestion_ts", F.to_timestamp(
+    F.regexp_extract(
+        F.input_file_name(), r"out_of_service_(\d{8}_\d{6})", 1),
+        "yyyyMMdd_HHmmss"
+    )
+)
+
+window = Window.partitionBy("tramo_osm_id").orderBy(F.col("ingestion_ts").desc())
+
+silver_df = (
+    silver_df
+    .withColumn("rn", F.row_number().over(window))
+    .filter("rn = 1")
+    .drop("rn")
+)
 
 delta_curated = DeltaTable.forPath(spark,SILVER_PATH)
 
@@ -153,18 +168,9 @@ delta_curated = DeltaTable.forPath(spark,SILVER_PATH)
 #####################################################
 # Ingesta en Gold
 #####################################################
-schema_silver = StructType([
-    StructField("tramo_osm_id", IntegerType(), False),
-    StructField("nombre_tramo", ArrayType(StringType(), True)),
-    StructField("estado", StringType(), True),
-    StructField("tipoincidencia", StringType(), True),
-    StructField("ingestion_ts", TimestampType(), True),
-    StructField("source_file", StringType(), True)
-])
 
 silver_df = (
     spark.read
-        .schema(schema_silver)
         .format("delta")
         .load(SILVER_PATH)
 )
@@ -184,7 +190,14 @@ mappings_df = (
         .schema(mapping_schema)
         .option("header", True)
         .option("delimiter", ";")
-        .csv("s3a://smart-mobility-vlc/delta/resources/callejero-con-mappings.csv")
+        .csv("file:///opt/resources/callejero-con-mappings.csv")
+).select(
+    "tramo_osm_id",
+    "distrito_id",
+    "barrio_id",
+    "nombre_distrito",
+    "nombre_barrio",
+    "geometry_tramo"
 )
 
 gold_df = (
@@ -204,11 +217,13 @@ delta_curated = DeltaTable.forPath(spark,GOLD_PATH)
         """
             t.tramo_osm_id = s.tramo_osm_id AND
             t.barrio_id = s.barrio_id AND
-            t.distrito_id = s.distrito_id AND
+            t.distrito_id = s.distrito_id
         """
     )
     .whenMatchedUpdate(
-        condition="t.ingestion_ts < s.ingestion_ts",
+        condition="""
+            t.ingestion_ts < s.ingestion_ts
+        """,
         set={
             "nombre_tramo": "s.nombre_tramo",
             "estado": "s.estado",
@@ -222,7 +237,7 @@ delta_curated = DeltaTable.forPath(spark,GOLD_PATH)
     )
     .whenNotMatchedInsert(
         values={
-            "tramo_id": "s.tramo_id",
+            "tramo_osm_id": "s.tramo_osm_id",
             "nombre_tramo": "s.nombre_tramo",
             "estado": "s.estado",
             "tipoincidencia": "s.tipoincidencia",
@@ -235,7 +250,6 @@ delta_curated = DeltaTable.forPath(spark,GOLD_PATH)
     )
     .execute()
 )
-
 #####################################################
 # Registrar archivos procesados
 #####################################################

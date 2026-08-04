@@ -62,8 +62,6 @@ while True:
 
     csv_buffer = io.StringIO()
 
-    print(snapshot.columns)
-    print(snapshot.head())
     snapshot.to_csv(
         csv_buffer,
         sep=";",
@@ -76,8 +74,6 @@ while True:
         f"{PREFIX}/"
         f"out_of_service_{now:%Y%m%d_%H%M%S}.csv"
     )
-
-    snapshot.to_csv("test.csv",sep=";")
 
     s3.put_object(
         Bucket=BUCKET_NAME,

@@ -13,7 +13,7 @@ from airflow.providers.apache.spark.operators.spark_submit import SparkSubmitOpe
 # Configuración
 #####################################################
 BUCKET_NAME = "smart-mobility-vlc"
-UPLOAD_PREFIX = "delta/out-of-services/landing-zone/"
+UPLOAD_PREFIX = "delta/out-of-services/1-bronze/"
 
 #####################################################
 # Comprobar si existen nuevos CSV

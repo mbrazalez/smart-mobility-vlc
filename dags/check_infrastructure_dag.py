@@ -180,10 +180,16 @@ with DAG(
         trigger_dag_id="out_of_service_streets_dag"
     )
 
+    trigger_info_for_routes_dag = TriggerDagRunOperator(
+        task_id="trigger_info_for_routes_dag",
+        trigger_dag_id="info_for_routes_dag"
+    )
+
     
     spark >> kafka >> s3 >> sqlserver >> success >> [
         trigger_traffic_dag,
         trigger_pollution_dag,
         trigger_streets_dag,
+        trigger_info_for_routes_dag
     ]
 
