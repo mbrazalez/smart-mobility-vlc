@@ -72,7 +72,7 @@ RUN pip install --no-cache-dir \
     apache-airflow-providers-amazon \
     pyodbc \
     kafka-python \
-    pandas \
+    duckdb \
     requests \
     pyproj \
     apache-airflow-providers-microsoft-mssql \

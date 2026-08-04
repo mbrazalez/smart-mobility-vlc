@@ -4,6 +4,15 @@ from airflow.operators.empty import EmptyOperator
 from airflow.providers.apache.spark.operators.spark_submit import SparkSubmitOperator
 from airflow.operators.python import PythonOperator
 import networkx as nx
+import os
+
+#####################################################
+# Environment Variables
+#####################################################
+AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
+AWS_SNS_TOPIC = os.getenv("AWS_SNS_TOPIC")
+INFO_FOR_ROUTE_SNAPSHOT_PATH = os.getenv("INFO_FOR_ROUTE_SNAPSHOT_PATH")
 
 def build_graph():
     G = nx.MultiDiGraph()

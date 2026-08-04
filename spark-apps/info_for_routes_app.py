@@ -128,17 +128,8 @@ route_df = route_df.withColumn(
     "event_ts"
 )
 
-(
-    route_df
-        .write
-        .format("delta")
-        .mode("append")
-        .save(route_path)
-)
+route_df.write.format("delta").mode("append").save(route_path)
 
 latest_path = "s3a://smart-mobility-vlc/delta/route-calculations/latest/"
 
-route_df.write\
-    .format("delta")\
-    .mode("overwrite")\
-    .save(latest_path)
+route_df.write.mode("overwrite").parquet("s3a://smart-mobility-vlc/route-calculations/latest/")

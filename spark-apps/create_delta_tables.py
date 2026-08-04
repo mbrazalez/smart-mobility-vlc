@@ -156,24 +156,3 @@ schema_route = StructType([
 ])
 
 create_delta_table(spark, ROUTE_PATH, schema_route)
-
-######################################################
-# Generar delta table para lambda                    #
-######################################################
-LAMBDA_PATH = "s3a://smart-mobility-vlc/delta/route-calculations/latest/"
-
-schema_lambda = StructType([
-    StructField("tramo_osm_id", IntegerType(), True),
-    StructField("tramo_id", IntegerType(), True),
-    StructField("station_id", IntegerType(), True),
-    StructField("u", IntegerType(), True),
-    StructField("v", IntegerType(), True),
-    StructField("key", IntegerType(), True),
-    StructField("length", FloatType(), True),
-    StructField("geometry_osm", StringType(), True),
-    StructField("event_ts", TimestampType(), True),
-    StructField("weight", FloatType(), True),
-])
-
-create_delta_table(spark, LAMBDA_PATH, schema_lambda)
-

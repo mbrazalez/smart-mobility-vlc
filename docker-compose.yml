@@ -34,6 +34,7 @@ x-airflow-common:
     AIRFLOW_CONN_SPARK_DEFAULT: spark://spark-master:7077
     AIRFLOW_CONN_MSSQL_DEFAULT: mssql://sa:${MSSQL_SA_PASSWORD}@sqlserver:1433/master
     WEATHER_API_KEY: ${WEATHER_API_KEY}
+    INFO_FOR_ROUTE_SNAPSHOT_PATH: ${INFO_FOR_ROUTE_SNAPSHOT_PATH}
     
   volumes:
     - ${AIRFLOW_PROJ_DIR:-.}/dags:/opt/airflow/dags
