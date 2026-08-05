@@ -71,8 +71,8 @@ def notify_success():
         target_arn=AWS_SNS_TOPIC,
         subject="Pollution Levels Pipeline",
         message="""
-Pipeline for pollution_levels_app finished successfully.
-""",
+        Pipeline for pollution_levels_app finished successfully.
+        """,
     )
 
 

@@ -23,12 +23,12 @@ mapping_path = "s3a://smart-mobility-vlc/delta/resources/mappings-entre-tramos.c
 route_path = "s3a://smart-mobility-vlc/delta/route-calculations/history/"
  
 mapping_schema = StructType([
-    StructField("tramo_osm_id", IntegerType(), True),
     StructField("tramo_id", IntegerType(), True),
     StructField("station_id", IntegerType(), True),
-    StructField("osmid", StringType(), True),
-    StructField("u", IntegerType(), True),
-    StructField("v", IntegerType(), True),
+    StructField("tramo_osm_id", IntegerType(), True),
+    StructField("osmid", LongType(), True),
+    StructField("u", LongType(), True),
+    StructField("v", LongType(), True),
     StructField("key", IntegerType(), True),
     StructField("length", FloatType(), True),
     StructField("geometry_osm", StringType(), True),
@@ -39,13 +39,15 @@ mappings_df = (
         .schema(mapping_schema)
         .option("header", True)
         .option("delimiter", ";")
-        .csv("file:///opt/resources/mappings-entre-tramos.csv")
+        .csv("s3a://smart-mobility-vlc/delta/resources/mappings-entre-tramos.csv")
 ).select(
-    "tramo_osm_id",
     "tramo_id",
     "station_id",
+    "tramo_osm_id",
+    "osmid",
     "u",
     "v",
+    "key",
     "length",
     "geometry_osm"
 )
@@ -93,13 +95,6 @@ route_df = (
         .join(out_df, on="tramo_osm_id", how="left")
 )
 
-route_df = (
-    route_df
-        .filter(
-            (F.col("estado_via").isNull()) |
-            (F.col("estado_via") != "Cerrada")
-        )
-)
 
 route_df = route_df.withColumns({
     "environmental_risk": F.coalesce("environmental_risk", F.lit(10.0)),
@@ -124,6 +119,7 @@ route_df = route_df.withColumn(
     "length",
     "geometry_osm",
     "estado_trafico",
+    "estado_via",
     "weight",
     "event_ts"
 )
@@ -132,4 +128,4 @@ route_df.write.format("delta").mode("append").save(route_path)
 
 latest_path = "s3a://smart-mobility-vlc/delta/route-calculations/latest/"
 
-route_df.write.mode("overwrite").parquet("s3a://smart-mobility-vlc/route-calculations/latest/")
+route_df.write.mode("overwrite").parquet(latest_path)

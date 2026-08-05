@@ -113,9 +113,9 @@ spark.sparkContext.setLogLevel("ERROR")
 #####################################################
 # Read S3 info                                      #
 #####################################################
-# landing_key = sys.argv[1]
-# LANDING_PATH = f"s3a://smart-mobility-vlc/{landing_key}"
-LANDING_PATH = "s3a://smart-mobility-vlc/delta/pollution-levels/landing-zone/year=2026/month=08/day=04/pollution_levels_20260804T075002.json"
+landing_key = sys.argv[1]
+LANDING_PATH = f"s3a://smart-mobility-vlc/{landing_key}"
+# LANDING_PATH = "s3a://smart-mobility-vlc/delta/pollution-levels/landing-zone/year=2026/month=08/day=04/pollution_levels_20260804T075002.json"
 
 df_raw = (
     spark.read

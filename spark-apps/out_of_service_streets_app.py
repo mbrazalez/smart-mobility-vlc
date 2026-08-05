@@ -190,7 +190,7 @@ mappings_df = (
         .schema(mapping_schema)
         .option("header", True)
         .option("delimiter", ";")
-        .csv("file:///opt/resources/callejero-con-mappings.csv")
+        .csv("s3a://smart-mobility-vlc/delta/resources/callejero-con-mappings.csv")
 ).select(
     "tramo_osm_id",
     "distrito_id",

@@ -145,14 +145,15 @@ schema_route = StructType([
     StructField("tramo_osm_id", IntegerType(), True),
     StructField("tramo_id", IntegerType(), True),
     StructField("station_id", IntegerType(), True),
-    StructField("u", IntegerType(), True),
-    StructField("v", IntegerType(), True),
+    StructField("u", LongType(), True),
+    StructField("v", LongType(), True),
+    StructField("key", IntegerType(), True),
     StructField("length", FloatType(), True),
     StructField("geometry_osm", StringType(), True),
     StructField("estado_trafico", IntegerType(), True),
-    StructField("environmental_risk", DoubleType(), True),
+    StructField("weight", DoubleType(), True),
+    StructField("estado_via", StringType(), True),
     StructField("event_ts", TimestampType(), True),
-    StructField("weight", FloatType(), True),
 ])
 
 create_delta_table(spark, ROUTE_PATH, schema_route)

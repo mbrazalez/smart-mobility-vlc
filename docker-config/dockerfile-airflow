@@ -78,4 +78,5 @@ RUN pip install --no-cache-dir \
     apache-airflow-providers-microsoft-mssql \
     scikit-fuzzy \
     scipy \
-    networkx
+    networkx \
+    shapely
