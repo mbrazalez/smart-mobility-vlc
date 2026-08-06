@@ -178,15 +178,7 @@ with tab_rutas:
             if st.session_state.route_destination else "— (haz clic en el mapa)"
         )
         st.markdown(f"**Origen:** {origen_txt}  ·  **Destino:** {destino_txt}")
-    with col_reset:
-        if st.button("🔄 Reiniciar"):
-            st.session_state.route_origin = None
-            st.session_state.route_destination = None
-            st.session_state.route_result = None
-            st.session_state.route_last_click = None
-            st.session_state.origin_query = ""
-            st.session_state.destination_query = ""
-            st.rerun()
+
 
     resultado_previo = st.session_state.route_result
     shortest_geojson = resultado_previo["shortest_route"] if resultado_previo else None

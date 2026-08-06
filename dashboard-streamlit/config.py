@@ -35,7 +35,7 @@ ESTADOS_CERRADO = ["Cerrada"]
 VALENCIA_CENTER = (39.4699, -0.3763)
 DEFAULT_ZOOM = 13
 # Altura en píxeles de los mapas. Si en tu pantalla sigue haciendo falta scroll, baja este valor.
-MAP_HEIGHT = 480
+MAP_HEIGHT = 760
 # El mapa de "Calcular ruta" tiene más elementos por encima (buscador, info de puntos), así
 # que usa una altura más pequeña para que la pestaña quepa entera igualmente.
 ROUTE_MAP_HEIGHT = 340

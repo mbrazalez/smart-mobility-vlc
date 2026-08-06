@@ -9,7 +9,7 @@ import config
 
 def _empty_map():
     m = folium.Map(location=config.VALENCIA_CENTER, zoom_start=config.DEFAULT_ZOOM, tiles=None)
-    folium.TileLayer(tiles="cartodbpositron", name="Layers", control=True).add_to(m)
+    folium.TileLayer(tiles="cartodbpositron", name="Capas", control=True).add_to(m)
     return m
 
 
@@ -138,7 +138,7 @@ def build_route_map(origin=None, destination=None, shortest_geojson=None, smart_
     (el resultado de route_to_gdf(...).to_json() ya parseado con json.loads) o None."""
     center = origin if origin else config.VALENCIA_CENTER
     m = folium.Map(location=center, zoom_start=config.DEFAULT_ZOOM, tiles=None)
-    folium.TileLayer(tiles="cartodbpositron", name="Layers", control=True).add_to(m)
+    folium.TileLayer(tiles="cartodbpositron", name="Capas", control=True).add_to(m)
 
     if origin:
         folium.Marker(location=origin, tooltip="Origen", icon=folium.Icon(color="green", icon="play")).add_to(m)
