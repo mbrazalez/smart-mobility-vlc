@@ -104,11 +104,7 @@ route_df = route_df.withColumns({
 
 route_df = route_df.withColumn(
     "weight",
-    F.col("length") * (
-        1 *
-        F.col("environmental_risk") / 10 *
-        F.col("estado_trafico") * 0.5
-    )
+    F.col("length") * (1 + F.col("environmental_risk")/10 + F.col("estado_trafico")/2)
 ).select(
     "tramo_osm_id",
     "tramo_id",
