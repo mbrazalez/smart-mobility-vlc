@@ -3,99 +3,12 @@ from pyspark.sql import functions as F
 from pyspark.sql.types import *
 from delta.tables import DeltaTable
 from pyspark.sql.functions import udf
-import numpy as np
-import skfuzzy as fuzz
-from skfuzzy import control as ctrl
 import sys
+from fis import compute_environmental_risk
 
 #####################################################
-# FIS Set-Up
+# FIS Function
 #####################################################
-pm10 = ctrl.Antecedent(np.arange(0, 151, 1), "pm10")
-pm25 = ctrl.Antecedent(np.arange(0, 101, 1), "pm25")
-wind = ctrl.Antecedent(np.arange(0, 41, 1), "wind")
-
-risk = ctrl.Consequent(np.arange(0, 10.1, 0.1), "environmental_risk")
-
-pm10["good"] = fuzz.zmf(pm10.universe, 18, 25)
-pm10["fair"] = fuzz.pimf(pm10.universe, 19, 21, 33, 38)
-pm10["moderate"] = fuzz.pimf(pm10.universe, 31, 36, 45, 55)
-pm10["poor"] = fuzz.pimf(pm10.universe, 46, 51, 90, 110)
-pm10["very_poor"] = fuzz.smf(pm10.universe, 91, 101)
-
-pm25["good"] = fuzz.zmf(pm25.universe, 9, 12)
-pm25["fair"] = fuzz.pimf(pm25.universe, 9, 11, 18, 22)
-pm25["moderate"] = fuzz.pimf(pm25.universe, 18, 21, 24, 28)
-pm25["poor"] = fuzz.pimf(pm25.universe, 23, 26, 45, 55)
-pm25["very_poor"] = fuzz.smf(pm25.universe, 46, 55)
-
-wind["low"] = fuzz.trapmf(wind.universe, [0, 0, 6, 12])
-wind["medium"] = fuzz.trimf(wind.universe, [8, 18, 28])
-wind["high"] = fuzz.trapmf(wind.universe, [22, 30, 40, 40])
-
-risk["low"] = fuzz.trapmf(risk.universe, [0, 0, 2.5, 4])
-risk["medium"] = fuzz.trimf(risk.universe, [3, 5, 7])
-risk["high"] = fuzz.trapmf(risk.universe, [6, 8, 10, 10])
-
-rules = [
-    ctrl.Rule(pm10["good"] & pm25["good"], risk["low"]),
-    ctrl.Rule(pm10["good"] & pm25["fair"] & ~wind["high"], risk["low"]),
-    ctrl.Rule(pm10["good"] & pm25["moderate"] & ~wind["high"], risk["medium"]),
-    ctrl.Rule(pm10["good"] & pm25["poor"] & ~wind["high"], risk["high"]),
-    ctrl.Rule(pm10["good"] & pm25["very_poor"], risk["high"]),
-    ctrl.Rule(pm10["fair"] & pm25["good"] & ~wind["high"], risk["low"]),
-    ctrl.Rule(pm10["fair"] & pm25["fair"] & ~wind["high"], risk["low"]),
-    ctrl.Rule(pm10["fair"] & pm25["moderate"] & ~wind["high"], risk["medium"]),
-    ctrl.Rule(pm10["fair"] & pm25["poor"] & ~wind["high"], risk["high"]),
-    ctrl.Rule(pm10["fair"] & pm25["very_poor"], risk["high"]),
-    ctrl.Rule(pm10["moderate"] & pm25["good"] & ~wind["high"], risk["medium"]),
-    ctrl.Rule(pm10["moderate"] & pm25["fair"] & ~wind["high"], risk["medium"]),
-    ctrl.Rule(pm10["moderate"] & pm25["moderate"] & ~wind["high"], risk["medium"]),
-    ctrl.Rule(pm10["moderate"] & pm25["poor"] & ~wind["high"], risk["high"]),
-    ctrl.Rule(pm10["moderate"] & pm25["very_poor"], risk["high"]),
-    ctrl.Rule(pm10["good"] & pm25["fair"] & wind["high"], risk["low"]),
-    ctrl.Rule(pm10["good"] & pm25["moderate"] & wind["high"], risk["low"]),
-    ctrl.Rule(pm10["good"] & pm25["poor"] & wind["high"], risk["medium"]),
-    ctrl.Rule(pm10["fair"] & pm25["good"] & wind["high"], risk["low"]),
-    ctrl.Rule(pm10["fair"] & pm25["fair"] & wind["high"], risk["low"]),
-    ctrl.Rule(pm10["fair"] & pm25["moderate"] & wind["high"], risk["low"]),
-    ctrl.Rule(pm10["fair"] & pm25["poor"] & wind["high"], risk["medium"]),
-    ctrl.Rule(pm10["moderate"] & pm25["good"] & wind["high"], risk["low"]),
-    ctrl.Rule(pm10["moderate"] & pm25["fair"] & wind["high"], risk["low"]),
-    ctrl.Rule(pm10["moderate"] & pm25["moderate"] & wind["high"], risk["low"]),
-    ctrl.Rule(pm10["moderate"] & pm25["poor"] & wind["high"], risk["medium"]),
-    ctrl.Rule(pm10["poor"] & ~wind["high"], risk["high"]),
-    ctrl.Rule(pm10["very_poor"], risk["high"]),
-    ctrl.Rule(pm25["very_poor"], risk["high"])
-]
-
-fis = ctrl.ControlSystem(rules)
-
-def compute_environmental_risk(pm10_value, pm25_value, wind_value):
-
-    if (
-        pm10_value is None or
-        pm25_value is None or
-        wind_value is None
-    ):
-        return None
-
-
-    simulation = ctrl.ControlSystemSimulation(fis)
-
-    wind_value = min(max(float(wind_value), 0), 40)
-    pm10_value = min(max(float(pm10_value), 0), 150)
-    pm25_value = min(max(float(pm25_value), 0), 100)
-
-    simulation.input["wind"] = wind_value
-    simulation.input["pm10"] = float(pm10_value)
-    simulation.input["pm25"] = float(pm25_value)
-    simulation.input["wind"] = float(wind_value)
-
-    simulation.compute()
-
-    return float(simulation.output["environmental_risk"])
-
 risk_udf = udf(compute_environmental_risk, DoubleType())
 
 #####################################################
