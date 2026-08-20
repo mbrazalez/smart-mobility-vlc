@@ -1,7 +1,3 @@
-"""
-Dashboard TFM — Smart Mobility Valencia
-Ejecutar con: streamlit run app.py
-"""
 import streamlit as st
 from streamlit_folium import st_folium
 
@@ -216,14 +212,51 @@ with tab_rutas:
             st.error(str(e))
 
     if st.session_state.route_result:
-        metrics = st.session_state.route_result.get("metrics", {})
-        m1, m2, m3, m4 = st.columns(4)
-        m1.metric("Distancia ruta corta", f"{metrics.get('shortest_distance_m', 0):,.0f} m")
-        m2.metric("Distancia ruta óptima", f"{metrics.get('smart_distance_m', 0):,.0f} m")
-        m3.metric("Coste ruta óptima", f"{metrics.get('smart_cost', 0):,.2f}")
-        m4.metric("Tiempo de cálculo (Lambda)", f"{metrics.get('execution_time_ms', 0):,.0f} ms")
-        st.caption("🔵 Ruta más corta (distancia) · 🟣 Ruta óptima (weight)")
+        resultado = st.session_state.route_result
+        metrics = resultado.get("metrics", {})
 
+        # Avisos devueltos por la Lambda (p. ej. la ruta atraviesa un corte)
+        for aviso in resultado.get("warnings", []):
+            st.warning(aviso)
+
+        dist_corta = metrics.get("shortest_distance_m", 0)
+        dist_optima = metrics.get("smart_distance_m", 0)
+        coste_corta = metrics.get("shortest_cost", 0)
+        coste_optima = metrics.get("smart_cost", 0)
+
+        # Fila 1: la ruta más corta
+        st.markdown("**🔵 Ruta más corta** — minimiza la distancia recorrida")
+        c1, c2 = st.columns(2)
+        c1.metric("Distancia", f"{dist_corta:,.0f} m")
+        c2.metric("Coste ponderado", f"{coste_corta:,.0f}")
+
+        # Fila 2: la ruta óptima, con la diferencia respecto a la anterior
+        st.markdown("**🟣 Ruta óptima** — equilibra distancia, calidad del aire, tráfico y cortes")
+        c3, c4 = st.columns(2)
+        c3.metric(
+            "Distancia",
+            f"{dist_optima:,.0f} m",
+            delta=f"{dist_optima - dist_corta:+,.0f} m",
+            delta_color="inverse",
+        )
+        c4.metric(
+            "Coste ponderado",
+            f"{coste_optima:,.0f}",
+            delta=f"{coste_optima - coste_corta:+,.0f}",
+            delta_color="inverse",
+        )
+
+        # Lectura conjunta de ambas métricas
+        if coste_corta > 0:
+            mejora = (coste_corta - coste_optima) / coste_corta
+            rodeo = (dist_optima - dist_corta) / dist_corta if dist_corta else 0
+            st.caption(
+                f"La ruta óptima reduce un {mejora:.1%} el coste ponderado "
+                f"a cambio de un {rodeo:+.1%} de distancia adicional."
+            )
+
+        st.caption(f"Tiempo de cálculo en Lambda: {metrics.get('execution_time_ms', 0):,.0f} ms")
+        
 st.sidebar.header("⚙️ Datos")
 if st.sidebar.button("🔄 Recargar datos"):
     st.cache_data.clear()

@@ -196,6 +196,7 @@ with DAG(
     start_pollution_levels_pipeline = SparkSubmitOperator(
         task_id="pollution_levels_pipeline",
         application="/opt/spark-apps/pollution_levels_app.py",
+        py_files="/opt/spark-apps/fis.py",
         conn_id="spark_default",
         name="pollution_levels_pipeline",
         total_executor_cores=2,

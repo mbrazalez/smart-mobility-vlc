@@ -108,7 +108,7 @@ silver_df = (
 )
 
 silver_df = silver_df.withColumn("estado",
-    F.when(F.col("estado").isin([1,2]), F.col("estado")) # Mantener Fluido o Denso
+    F.when(F.col("estado").isin([1,2]), F.col("estado")) # Mantener Denso o Congestionado
     .when(F.col("estado").isin([0,4,9]), 0) # Considerar sin datos como Fluido
     .when(F.col("estado") == 5, 0) # Fluido subterraneo -> Fluido
     .when(F.col("estado") == 6, 1) # Denso subterraneo -> Denso
